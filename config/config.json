@@ -1,0 +1,27 @@
+{
+  "development": {
+    "username": "root",
+    "password": "semarak2020",
+    "database": "semarak_sandbox",
+    "host": "54.254.4.152",
+    "dialect": "mysql",
+    "timezone": "+07:00"
+  },
+  "test": {
+    "username": "root",
+    "password": "semarak2020",
+    "database": "semarak-qahtan",
+    "host": "54.254.4.152",
+    "dialect": "mysql",
+    "timezone": "+07:00"
+  },
+  "production": {
+    "username": "root",
+    "password": "semarak2020",
+    "database": "semarakDB",
+    "host": "54.254.4.152",
+    "dialect": "mysql",
+    "timezone": "+07:00",
+    "logging": false
+  }
+}
