@@ -12,14 +12,14 @@ const jwt = require('jsonwebtoken');
 // const {sequelize} = require('../models');
 // const axios = require('axios');
 const {today, last_month} = require('../helpers/timer');
-const {
-  profile,
-  frnt_store,
-  lft_store,
-  rght_store,
-  id,
-  agent,
-} = require('../helpers/image');
+// const {
+//   profile,
+//   frnt_store,
+//   lft_store,
+//   rght_store,
+//   id,
+//   agent,
+// } = require('../helpers/image');
 // models
 
 const models = require('../models');
@@ -37,35 +37,84 @@ const trx_error_log = models.trx_error_log;
 
 const multer = require('multer');
 
-const upload = multer({
+exports.upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb)=>{
+      // console.log('req.destination', req.body);
       // console.log(req);
-      cb(null, '/');
+      cb(null, 'public/');
     },
     filename: (req, file, cb)=>{
-      console.log('file', file);
-      cb(null, file.originalname);
+      // console.log('req.email', req.body.email);
+      console.log(file.fieldname);
+      const fieldName = file.fieldname;
+      const x = file.originalname.split('.');
+      const fileExtension = x[x.length-1];
+
+      switch (fieldName) {
+        case 'front_store':
+          req.body.frontStoreDirect = 'public/' +
+          req.body.email + '_' + fieldName + '.' + fileExtension;
+          console.log('req.body.frontStoreDirect', req.body.frontStoreDirect);
+          break;
+        case 'left_store':
+          req.body.leftStoreDirect = 'public/' +
+            req.body.email + '_' + fieldName + '.' + fileExtension;
+          console.log('req.body.leftStoreDirect', req.body.leftStoreDirect);
+          break;
+        case 'right_store':
+          req.body.rightStoreDirect = 'public/' +
+            req.body.email + '_' + fieldName + '.' + fileExtension;
+          console.log('req.body.rightStoreDirect', req.body.rightStoreDirect);
+          break;
+        default:
+          // code block
+      }
+      cb(null, req.body.email + '_' + file.fieldname + '.' + fileExtension);
     },
   }),
 });
 
-exports.tesUpload = function(req, res, next) {
-  upload.single('myImage')(req, res, next);
-  if (err) {
-    res.status(200).json(err);
-  }
+
+exports.tesUpload = (req, res, next) => {
+  console.log('reqs', req.message);
+  upload.fields([{name: 'myImage', maxCount: 1},
+    {name: 'yourImage', maxCount: 1}])(req, res, function(err) {
+    if (err) {
+      return res.end('Error uploading file.');
+    }
+    res.end('File is uploaded');
+    console.log('coooos', req.body.message);
+  });
+
+
+  // upload.fields([{name: 'myImage', maxCount: 1},
+  //   {name: 'yourImage', maxCount: 1}])(req, res, next);
+  // // console.log('req.body', req.body);
+  // // console.log('req.file', req.file);
+  // // upload.fields((req) =>{
+  // //   const fieldList = [];
+  // //   req.map((item)=>{
+  // //     fieldList.push({
+  // //       name: item.fieldname,
+  // //       maxCount: 1,
+  // //     });
+  // //   });
+  // //   return fieldList;
+  // // })(req, res, next);
+  // console.log('yooow', req.body.message);
 };
 
-exports.register = (req, res) =>{
-  console.log('aidi' + req.user[0].role_id);
+exports.register = (req, res, callback) =>{
+  // console.log('reqs', req.body);
+  // return console.log('aidi' + req.user[0].role_id);
   if (!req.user[0].role_id === 'sl') {
     return res.status(400).json({
       message: 'you are not allowed!',
     });
   }
-  req.body.salesid=req.user[0].id;
-  firstReg(req, function(resultFirst) {
+  req.body.salesId=req.user[0].id;
+  firstReg(req.body, function(resultFirst) {
     if (resultFirst.hasOwnProperty('message')) {
       return res.status(400).json({resultFirst});
     } else {
@@ -76,17 +125,20 @@ exports.register = (req, res) =>{
       });
     }
   });
+  // secondReg(req);
 };
 
 const firstReg = (req, callback) => {
-  const idMarketing = req.body.salesid;
-  console.log('idMarketing', idMarketing);
+  console.log('reqs', req);
+  const idMarketing = req.salesId;
+  // return console.log('reqs', req.password);
+  // return console.log('idMarketing', idMarketing);
   // const maps = new Map();
   mst_user.findOne({
     where: {
       email: req.email,
     }, $or: [{
-      phone: req.phone,
+      phone: req.phone[req.phone.length-1],
     }],
   }).then((user)=>{
     console.log('user : ', (user));
@@ -97,12 +149,13 @@ const firstReg = (req, callback) => {
         data: [],
       });
     } else {
+      // console.log('test', {
       mst_user.create({
-        alias: req.alias,
+        alias: req.alias[req.alias.length-1],
         email: req.email,
-        phone: req.phone,
-        password: req.password,
-        role_id: req.role_id,
+        phone: req.phone[req.phone.length-1],
+        password: req.password[req.password.length-1],
+        role_id: req.role_id[req.role_id.length-1],
         // otp_token,
         refresh_token: null,
         phone_verified_at: today(),
@@ -110,6 +163,7 @@ const firstReg = (req, callback) => {
         created_by: idMarketing,
         updated_at: today(),
         updated_by: idMarketing,
+      // }); // test
       }).then((hasil)=>{
         console.log('hasil', hasil.id);
         return callback({userId: hasil.id});
@@ -119,13 +173,12 @@ const firstReg = (req, callback) => {
 };
 
 const secondReg = (req, callback) =>{
-  console.log('secondReg', req.userId);
+  console.log('secondReg', req);
   const {
-    id_photo,
-    left_store,
-    right_store,
-    front_store} = req.file;
-  const {
+    userId,
+    frontStoreDirect,
+    leftStoreDirect,
+    rightStoreDirect,
     id_number,
     id_type,
     file_name,
@@ -151,51 +204,83 @@ const secondReg = (req, callback) =>{
     residential_id,
     residential_entry,
     religion_id,
-    citizenship_id,
+    salesId,
+    // citizenship_id,
   } = req.body;
+
+  const idNumber = id_number[id_number.length-1];
+  const idType = id_type[id_type.length-1];
+  const fileName = file_name[file_name.length-1];
+  const fullName = full_name[full_name.length-1];
+  const longLat = long_lat[long_lat.length-1];
+  const storeName = store_name[store_name.length-1];
+  const brithPlace = birth_place[birth_place.length-1];
+  const nationalityString = nationality[nationality.length-1]; // wna wni
+  const streetString = street[street.length-1];
+  const rtString = rt[rt.length-1];
+  const rwString = rw[rw.length-1];
+  const houseNumber = number[number.length-1];
+  const ageString = age[age.length-1];
+  const birthDate = birth_date[birth_date.length-1];
+  const postalCode = postal_code[postal_code.length-1];
+  const ownerAddres = owner_address[owner_address.length-1];
+  const regencyId = regency_id[regency_id.length-1];
+  const provinceId = province_id[province_id.length-1];
+  const districtId = district_id[district_id.length-1];
+  const villageId = village_id[village_id.length-1];
+  const maritalId = marital_id[marital_id.length-1];
+  const genderId = gender_id[gender_id.length-1];
+  const residentialId = residential_id[residential_id.length-1];
+  const residentialEntry = residential_entry[residential_entry.length-1];
+  const religionId = religion_id[religion_id.length-1];
+  // const citizenshipId = citizenship_id[citizenship_id.length-1];
+
   mst_agent.create({
-    id_photo,
-    front_store,
-    left_store,
-    right_store,
-    file_name,
-    user_id: req.userId,
+  // console.log('woyooo', {
+    user_id: userId,
+    id_photo: 'kosong',
+    front_store: (frontStoreDirect)? frontStoreDirect : '-',
+    left_store: (leftStoreDirect)? leftStoreDirect : '-',
+    right_store: (rightStoreDirect)? rightStoreDirect : '-',
+    file_name: fileName,
+    // user_id: req.userId,
     // file_name: file_name ? profile(req.user[0].id) : undefined,
-    name: full_name,
-    gender_id,
-    age,
-    birth_place,
-    id_number,
-    id_type,
-    marital_id,
-    birth_date,
-    nationality,
-    regency_id,
-    district_id,
-    province_id,
-    village_id,
-    street,
-    rt,
-    rw,
-    residential_id,
-    residential_entry,
-    religion_id,
+    name: fullName,
+    gender_id: genderId,
+    age: ageString,
+    birth_place: brithPlace,
+    id_number: idNumber,
+    id_type: idType,
+    marital_id: maritalId,
+    birth_date: birthDate,
+    nationality: nationalityString,
+    regency_id: regencyId,
+    district_id: districtId,
+    province_id: provinceId,
+    village_id: villageId,
+    street: streetString,
+    rt: rtString,
+    rw: rwString,
+    residential_id: residentialId,
+    residential_entry: residentialEntry,
+    religion_id: religionId,
     // id_photo: id_photo ? id(req.user[0].id) : undefined,
     // front_store: front_store ? frnt_store(req.user[0].id) : undefined,
     // left_store: left_store ? lft_store(req.user[0].id) : undefined,
     // right_store: right_store ? rght_store(req.user[0].id) : undefined,
-    owner_address,
-    number,
-    citizenship_id,
-    postal_code,
-    store_name,
-    long_lat,
+    owner_address: ownerAddres,
+    number: houseNumber,
+    // citizenship_id: citizenshipId,
+    postal_code: postalCode,
+    store_name: storeName,
+    long_lat: longLat,
     scope_id: 3,
     type_id: 2,
     created_at: today(),
-    created_by: idMarketing,
+    created_by: salesId,
     updated_at: today(),
-    updated_by: idMarketing,
+    updated_by: salesId,
+  // });
   }).catch((e)=>{
     console.log(e.message);
     callback({message: e.message,

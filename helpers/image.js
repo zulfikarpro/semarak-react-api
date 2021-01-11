@@ -13,9 +13,9 @@ exports.lft_store = (id) => {
 exports.rght_store = (id) => {
   return `right_store_${id}.png`;
 };
-exports.agent = () => {
-  return "public/user/photo/";
-};
+// exports.agent = () => {
+//   return "public/user/photo/";
+// };
 exports.goods_img = () => {
   return "public/products/goods/";
 };
