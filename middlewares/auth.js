@@ -79,7 +79,7 @@ function auth(req, res, next) {
                     console.log('agent ' + agent);
                     if (!agent) {
                       authSales(user[0].id, function(result) {
-                        console.log('callback' + result);
+                        console.log('callback' + JSON.stringify(result));
                         if (!result) {
                           throw {
                             name: 'Custom',
@@ -127,24 +127,21 @@ function auth(req, res, next) {
 }
 
 const authSales = (userId, callback) => {
-  // const promise = [];
-  // const maps = new Map();
+  // console.log('userId', userId);
   mst_user.findOne({
     where: {
       id: userId,
     },
-  })
-      .catch((_err)=>{
-
-      })
-      .then((sales)=>{
-        console.log('sales '+sales);
-        //   maps.set(sales.dataValues);
-        //   promise.push(sales.dataValues)
-        //   // promise.push(maps)
-        //   // console.log(sales.dataValues)
-        callback(sales);
-      });
+  }).catch((_err)=>{
+    console.log('authSaleserr', _err.message);
+  }).then((sales)=>{
+    // console.log('sales '+ JSON.stringify(sales));
+    //   maps.set(sales.dataValues);
+    //   promise.push(sales.dataValues)
+    //   // promise.push(maps)
+    //   // console.log(sales.dataValues)
+    callback(sales);
+  });
 };
 
 module.exports = auth;

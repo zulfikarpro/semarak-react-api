@@ -33,11 +33,7 @@ const auth = require('../../middlewares/auth');
 // const agentDetail = require('../../middlewares/agentDetail');
 // const OTPreset = require('../../middlewares/OTPreset');
 // const OTPregister = require('../../middlewares/OTPregister');
-router.post('/register', auth, upload.fields(
-    [{name: 'front_store', maxCount: 1},
-      {name: 'left_store', maxCount: 1},
-      {name: 'right_store', maxCount: 1},
-    ]), register);
+router.post('/register', auth, register);
 router.post('/upload', tesUpload);
 // router.get("/register", register);
 // router.post('/register/first', validFirstReg, first_reg);

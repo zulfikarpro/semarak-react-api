@@ -37,7 +37,16 @@ const trx_error_log = models.trx_error_log;
 
 const multer = require('multer');
 
-exports.upload = multer({
+exports.upload = (req, res, next) => {
+  console.log('upload jalan');
+  uploads.fields(
+      [{name: 'front_store', maxCount: 1},
+        {name: 'left_store', maxCount: 1},
+        {name: 'right_store', maxCount: 1},
+      ]);
+};
+
+const uploads = (multer({
   storage: multer.diskStorage({
     destination: (req, file, cb)=>{
       // console.log('req.destination', req.body);
@@ -73,18 +82,18 @@ exports.upload = multer({
       cb(null, req.body.email + '_' + file.fieldname + '.' + fileExtension);
     },
   }),
-});
+}));
 
 
 exports.tesUpload = (req, res, next) => {
-  console.log('reqs', req.message);
-  upload.fields([{name: 'myImage', maxCount: 1},
+  // console.log('reqs', req);
+  uploads.fields([{name: 'myImage', maxCount: 1},
     {name: 'yourImage', maxCount: 1}])(req, res, function(err) {
     if (err) {
       return res.end('Error uploading file.');
     }
     res.end('File is uploaded');
-    console.log('coooos', req.body.message);
+    // console.log('coooos', req.body.message);
   });
 
 
@@ -106,30 +115,40 @@ exports.tesUpload = (req, res, next) => {
 };
 
 exports.register = (req, res, callback) =>{
-  // console.log('reqs', req.body);
-  // return console.log('aidi' + req.user[0].role_id);
-  if (!req.user[0].role_id === 'sl') {
-    return res.status(400).json({
-      message: 'you are not allowed!',
-    });
-  }
-  req.body.salesId=req.user[0].id;
-  firstReg(req.body, function(resultFirst) {
-    if (resultFirst.hasOwnProperty('message')) {
-      return res.status(400).json({resultFirst});
-    } else {
-      req.body.userId=resultFirst.userId;
-      console.log(resultFirst);
-      return secondReg(req, function(resultSecond) {
-        res.status(200).json(resultSecond);
+  const promise = [];
+  uploads.fields([{name: 'myImage', maxCount: 1},
+    {name: 'front_store', maxCount: 1}])(req, res, function(err) {
+    if (err) {
+      return res.end('Error uploading file.');
+    }
+    if (!req.user[0].role_id === 'sl') {
+      return res.status(400).json({
+        message: 'you are not allowed!',
       });
     }
+    console.log(req.body);
+    req.body.salesId=req.user[0].id;
+    firstReg(req.body, function(resultFirst) {
+      if (resultFirst.hasOwnProperty('message')) {
+        // console.log('resultFirst', resultFirst);
+        promise.push(resultFirst);
+        console.log('promise', promise);
+        return res.status(200).json(promise);
+      }
+      req.body.userId=resultFirst.userId;
+      secondReg(req, function(resultSecond) {
+        promise.push(resultSecond);
+        console.log('promiseAtas', promise);
+        return res.status(200).json(promise);
+      });
+    });
   });
+
   // secondReg(req);
 };
 
 const firstReg = (req, callback) => {
-  console.log('reqs', req);
+  // console.log('reqso', req);
   const idMarketing = req.salesId;
   // return console.log('reqs', req.password);
   // return console.log('idMarketing', idMarketing);
@@ -138,10 +157,10 @@ const firstReg = (req, callback) => {
     where: {
       email: req.email,
     }, $or: [{
-      phone: req.phone[req.phone.length-1],
+      phone: req.phone,
     }],
   }).then((user)=>{
-    console.log('user : ', (user));
+    // console.log('user : ', (user));
     if (user) {
       return callback({
         message: 'user sudah terdaftar',
@@ -151,11 +170,11 @@ const firstReg = (req, callback) => {
     } else {
       // console.log('test', {
       mst_user.create({
-        alias: req.alias[req.alias.length-1],
+        alias: req.alias,
         email: req.email,
-        phone: req.phone[req.phone.length-1],
-        password: req.password[req.password.length-1],
-        role_id: req.role_id[req.role_id.length-1],
+        phone: req.phone,
+        password: req.password,
+        role_id: req.role_id,
         // otp_token,
         refresh_token: null,
         phone_verified_at: today(),
@@ -173,7 +192,7 @@ const firstReg = (req, callback) => {
 };
 
 const secondReg = (req, callback) =>{
-  console.log('secondReg', req);
+  // console.log('secondReg', req);
   const {
     userId,
     frontStoreDirect,
@@ -208,31 +227,31 @@ const secondReg = (req, callback) =>{
     // citizenship_id,
   } = req.body;
 
-  const idNumber = id_number[id_number.length-1];
-  const idType = id_type[id_type.length-1];
-  const fileName = file_name[file_name.length-1];
-  const fullName = full_name[full_name.length-1];
-  const longLat = long_lat[long_lat.length-1];
-  const storeName = store_name[store_name.length-1];
-  const brithPlace = birth_place[birth_place.length-1];
-  const nationalityString = nationality[nationality.length-1]; // wna wni
-  const streetString = street[street.length-1];
-  const rtString = rt[rt.length-1];
-  const rwString = rw[rw.length-1];
-  const houseNumber = number[number.length-1];
-  const ageString = age[age.length-1];
-  const birthDate = birth_date[birth_date.length-1];
-  const postalCode = postal_code[postal_code.length-1];
-  const ownerAddres = owner_address[owner_address.length-1];
-  const regencyId = regency_id[regency_id.length-1];
-  const provinceId = province_id[province_id.length-1];
-  const districtId = district_id[district_id.length-1];
-  const villageId = village_id[village_id.length-1];
-  const maritalId = marital_id[marital_id.length-1];
-  const genderId = gender_id[gender_id.length-1];
-  const residentialId = residential_id[residential_id.length-1];
-  const residentialEntry = residential_entry[residential_entry.length-1];
-  const religionId = religion_id[religion_id.length-1];
+  const idNumber = id_number;
+  const idType = id_type;
+  const fileName = file_name;
+  const fullName = full_name;
+  const longLat = long_lat;
+  const storeName = store_name;
+  const brithPlace = birth_place;
+  const nationalityString = nationality; // wna wni
+  const streetString = street;
+  const rtString = rt;
+  const rwString = rw;
+  const houseNumber = number;
+  const ageString = age;
+  const birthDate = birth_date;
+  const postalCode = postal_code;
+  const ownerAddres = owner_address;
+  const regencyId = regency_id;
+  const provinceId = province_id;
+  const districtId = district_id;
+  const villageId = village_id;
+  const maritalId = marital_id;
+  const genderId = gender_id;
+  const residentialId = residential_id;
+  const residentialEntry = residential_entry;
+  const religionId = religion_id;
   // const citizenshipId = citizenship_id[citizenship_id.length-1];
 
   mst_agent.create({
@@ -281,16 +300,21 @@ const secondReg = (req, callback) =>{
     updated_at: today(),
     updated_by: salesId,
   // });
-  }).catch((e)=>{
-    console.log(e.message);
-    callback({message: e.message,
-      status: 500});
-  }).then((hasil)=>{
-    console.log(hasil);
-    callback({message: 'berhasil',
-      status: 200,
-      data: {hasil}});
-  });
+  })
+  // .catch((e)=>{
+  //   console.log(e.message);
+  //   return callback({message: e.message,
+  //     status: 500,
+  //     data: [],
+  //   })
+      .then((hasil)=>{
+        return callback({
+          message: 'berhasil',
+          status: 200,
+          data: [],
+        });
+      });
+  // });
 };
 
 exports.checkingcredentialregister = (req, res) => {
