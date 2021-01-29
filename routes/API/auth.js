@@ -10,7 +10,6 @@ const {
   register,
   login,
   tesUpload,
-  upload,
   // verify,
   // refresh_token,
   // profile,
