@@ -140,6 +140,8 @@ module.exports = (sequelize, DataTypes) => {
         updated_by: {type: DataTypes.STRING(16), allowNull: false},
         created_at: {type: DataTypes.DATE, allowNull: false},
         updated_at: {type: DataTypes.DATE, allowNull: false},
+        warehouse_id: {type: DataTypes.INTEGER(5), allowNull: false},
+        payment_contract_id: {type: DataTypes.INTEGER(5), allowNull: false},
       },
       {
         sequelize,
