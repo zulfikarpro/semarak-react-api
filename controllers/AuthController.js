@@ -7,6 +7,7 @@ moment.tz.setDefault('Asia/Jakarta');
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 const jwt = require('jsonwebtoken');
+const axios = require('axios')
 
 // const bcrypt = require('bcrypt');
 // const {sequelize} = require('../models');
@@ -274,10 +275,12 @@ const secondReg = (req, callback) =>{
     birth_date: birthDate === 'undefined' ? '2000-01-01' : birthDate,
     nationality: nationalityString === 'undefined' ? 'wni' : nationalityString,
     regency_id: regencyId === 'undefined' ? 1 : regencyId,
-    district_id: districtId === 'undefined' ? 1: districtId,
-    province_id: provinceId === 'undefined' ? 1 : provinceId,
-    village_id: villageId === 'undefined' ? 1 : villageId,
-    street: streetString === 'undefined' ? '' : streetString,
+    warehouse_id: regencyId === '3273'? 72163 : 0,
+    payment_contract_id: 1,
+    district_id: districtId,
+    province_id: provinceId,
+    village_id: villageId,
+    street: streetString,
     rt: rtString === 'undefined' ? 1 : rtString,
     rw: rwString === 'undefined' ? 1 : rwString,
     residential_id: residentialId === 'undefined' ? 1 : residentialId,
@@ -301,21 +304,75 @@ const secondReg = (req, callback) =>{
     updated_by: salesId,
   // });
   })
-  // .catch((e)=>{
-  //   console.log(e.message);
-  //   return callback({message: e.message,
-  //     status: 500,
-  //     data: [],
-  //   })
       .then((hasil)=>{
-        return callback({
-          message: 'berhasil',
-          status: 200,
-          data: [],
+        postToJurnal(req, function(result) {
+          console.log('push user to jurnal', result.status)
+          if(result.status===500){
+            return callback(result)
+          }
+          return callback({
+            message: 'berhasil',
+            status: 200,
+            data: [],
+          });
         });
-      });
-  // });
+      })
+      .catch((e)=>{
+          console.log(e.message);
+          deleteReg(req,(result)=>{
+            return callback({message: e.message,
+              status: 500,
+              data: [],
+            })
+          });
+  });
 };
+
+const postToJurnal = async (req, callback) => {
+  console.log('axios', req.body.userId)
+  // axios.post('http://54.254.4.152:3001/master_data/add_contact'), null,
+  // {params:
+  // {
+  //   user_id:req.bodyuserId
+  // }
+  // }
+  await axios({
+    method: 'get',
+    url: 'http://54.254.4.152:3001/master_data/add_contact',
+    params:{
+      user_id:req.body.userId
+    }
+  }).then((result)=>{
+    console.log('axios post user to jurnal',result)
+    callBack(result)
+  }).catch((e)=>{
+    console.log('woyooo',e.message);
+    deleteReg(req, (result)=>{
+      console.log('weyeee', result)
+      return callback({message: e.message,
+        status: 500,
+        data: [],
+      })
+    });
+});
+}
+
+const deleteReg = (req, callBack) => {
+  console.log(req.body)
+  mst_agent.destroy({
+    where:{
+      user_id: req.body.userId
+    }
+  })
+  .then(()=>{
+    mst_user.destroy({
+      where:{
+        id: req.body.userId
+      }
+    })
+    return callBack('deleted')
+  })
+}
 
 exports.checkingcredentialregister = (req, res) => {
   if (req.method==='GET') {
